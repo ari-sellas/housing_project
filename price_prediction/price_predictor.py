@@ -16,7 +16,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def main():
+def main() -> None:
     """Executes the complete machine learning pipeline."""
     cleaned_training_df, imputers, fitted_ohe = clean_training_data("../csv_files/train.csv")
     cleaned_testing_df, house_ids = clean_testing_data("../csv_files/test.csv", imputers, fitted_ohe)
