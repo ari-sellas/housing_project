@@ -29,8 +29,10 @@ from sklearn.linear_model import Ridge
 from sklearn.model_selection import cross_val_score
 from xgboost import XGBRegressor
 
+
 RANDOM_STATE = 42
 CV_FOLDS = 10
+
 
 @dataclass
 class ModelSpec:
@@ -121,6 +123,7 @@ BASE_MODEL_SPECS = [
     ModelSpec("ridge", Ridge, _ridge_param_space, {})
 ]
 
+
 class SeparateModelOptimization:
     """Tunes a set of base regressors with Optuna, then stacks them.
 
@@ -143,7 +146,7 @@ class SeparateModelOptimization:
     def __init__(
             self,
             X: pd.DataFrame,
-            y: pd.DataFrame,
+            y: pd.Series,
             model_specs: list[ModelSpec] | None = None,
             n_trials: int = 100
     ):
