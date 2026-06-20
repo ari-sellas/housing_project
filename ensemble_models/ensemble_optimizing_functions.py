@@ -90,10 +90,11 @@ def _ridge_param_space(trial: optuna.trial.Trial) -> dict:
     }
 
 
-BASE_MODEL_SPECS = {
+BASE_MODEL_SPECS = [
     ModelSpec("xgb_regressor", XGBRegressor, _xgb_param_space, {"n_jobs": -1}),
     ModelSpec("lightgbm_regressor", LGBMRegressor, _lightgbm_param_space, {"n_jobs": -1, "verbose": -1}),
     ModelSpec("catboost_regressor", CatBoostRegressor, _catboost_param_space, {"thread_count": -1, "verbose": -1}),
     ModelSpec("random_forest", RandomForestRegressor, _random_forest_param_space, {"n_jobs": -1}),
     ModelSpec("ridge", Ridge, _ridge_param_space, {})
-}
+]
+
