@@ -135,19 +135,21 @@ class SeparateModelOptimization:
         Note: 100 of these trials is extremely computationally expensive;
         if you decide to run this program yourself, feel free to turn that
         number down a bit.
-    model_specs : list[ModelSpec]
-        The list of base models defined earlier.
+    model_specs : list[ModelSpec], optional
+        The list of base models defined earlier, or
+        an optional alternative if you choose
+        to clone the repo.
     """
     def __init__(
             self,
             X: pd.DataFrame,
             y: pd.DataFrame,
-            model_specs: list[ModelSpec],
+            model_specs: list[ModelSpec] | None = None,
             n_trials: int = 100
     ):
         self.X = X
         self.y = y
-        self.model_specs = BASE_MODEL_SPECS
+        self.model_specs = model_specs if model_specs is not None else BASE_MODEL_SPECS
         self.n_trials = n_trials
         self.optimized_models: list[tuple[str, object]] = []
 
