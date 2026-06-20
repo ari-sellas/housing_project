@@ -63,6 +63,27 @@ def clean_testing_data(
         imputers: list,
         fitted_ohe: OneHotEncoder
 ) -> tuple[pd.DataFrame, pd.Series]:
+    """Cleans the testing CSV and uses the imputers and encoders fitted on training data.
+
+    Parameters
+    ----------
+    testing_csv_file : str
+        Path to the testing CSV (which does not include a "SalePrice" column).
+    imputers : list
+        The [numeric_imputer, scaled_numeric_imputer, categorical_imputer]
+        returned by clean_training_data.
+    fitted_ohe : OneHotEncoder
+        The encoder returned by clean_training_data.
+
+    Returns
+    -------
+    cleaned_df : pd.DataFrame
+        Cleaned and feature-engineered testing data.
+    house_ids : pd.Series
+        The original Id column; this will be used later on to match
+        a predicted sale price to a house.
+    """
+
     uncleaned_df = pd.read_csv(testing_csv_file)
     house_ids = uncleaned_df["Id"]
     uncleaned_df = uncleaned_df.drop(columns=["Id", *COLUMNS_TO_DROP])
@@ -75,6 +96,7 @@ def clean_testing_data(
 
     cleaned_df = pd.concat([num_df, cat_df], axis=1)
 
+    return cleaned_df, house_ids
 
 def _split_numerical_and_categorical(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     num_df = df.select_dtypes(include=NUMERIC_DTYPES)
