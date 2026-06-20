@@ -1,2 +1,7 @@
 .venv/
 .idea/
+csv_files/*
+optuna_database/*
+__pycache__/
+*.py[codz]
+price_prediction/predicted_prices.csv
