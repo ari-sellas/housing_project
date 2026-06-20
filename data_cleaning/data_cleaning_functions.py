@@ -56,9 +56,9 @@ def _fit_numerical_cleaners(num_df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
     original_columns = num_df.columns
 
     numeric_imputer = _fit_knn_imputer(num_df)
-    knn_imputed_df = pd.DataFrame(numeric_imputer.transform(num_df), columns=original_columns)
+    imputed_df = pd.DataFrame(numeric_imputer.transform(num_df), columns=original_columns)
 
-    feature_engineered_df = _numerical_feature_engineering(knn_imputed_df)
+    feature_engineered_df = _numerical_feature_engineering(imputed_df)
     new_columns_only = feature_engineered_df.drop(columns=original_columns)
     combined_df = pd.concat([num_df[original_columns], new_columns_only], axis=1)
 
@@ -68,6 +68,26 @@ def _fit_numerical_cleaners(num_df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
     )
 
     return cleaned_df, [numeric_imputer, scaled_numeric_imputer]
+
+
+def _use_numerical_cleaners(
+        num_df: pd.DataFrame,
+        numeric_imputer: KNNImputer,
+        scaled_numeric_imputer: Pipeline
+) -> pd.DataFrame:
+    original_columns = num_df.columns
+
+    imputed_df = pd.DataFrame(numeric_imputer.transform(num_df), columns=original_columns)
+
+    feature_engineered_df = _numerical_feature_engineering(imputed_df)
+    new_columns_only = feature_engineered_df.drop(columns=original_columns)
+    combined_df = pd.concat([num_df[original_columns], new_columns_only], axis=1)
+
+    cleaned_df = pd.DataFrame(
+        scaled_numeric_imputer.transform(combined_df), columns=combined_df.columns
+    )
+
+    return cleaned_df
 
 
 def _fit_categorical_cleaners(
