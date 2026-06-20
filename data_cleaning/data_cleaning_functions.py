@@ -43,7 +43,10 @@ def clean_testing_data(
     num_df, cat_df = _split_numerical_and_categorical(uncleaned_df)
 
     numeric_imputer, scaled_numeric_imputer, categorical_imputer = imputers
-    ...
+    num_df = _use_numerical_cleaners(num_df, numeric_imputer, scaled_numeric_imputer)
+    cat_df = _use_categorical_cleaners(cat_df, fitted_ohe, categorical_imputer)
+
+    cleaned_df = pd.concat([num_df, cat_df], axis=1)
 
 
 def _split_numerical_and_categorical(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
