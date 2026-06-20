@@ -31,6 +31,21 @@ def clean_training_data(training_csv_file: str) -> tuple[pd.DataFrame, list, One
     return cleaned_df, imputers, fitted_ohe
 
 
+def clean_testing_data(
+        testing_csv_file: str,
+        imputers: list,
+        fitted_ohe: OneHotEncoder
+) -> tuple[pd.DataFrame, pd.Series]:
+    uncleaned_df = pd.read_csv(testing_csv_file)
+    house_ids = uncleaned_df["Id"]
+    uncleaned_df = uncleaned_df.drop(columns=["Id", *COLUMNS_TO_DROP])
+
+    num_df, cat_df = _split_numerical_and_categorical(uncleaned_df)
+
+    numeric_imputer, scaled_numeric_imputer, categorical_imputer = imputers
+    ...
+
+
 def _split_numerical_and_categorical(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     num_df = df.select_dtypes(include=NUMERIC_DTYPES)
     cat_df = df.select_dtypes(include="object")
