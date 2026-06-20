@@ -1,3 +1,9 @@
+"""Hyperparameter tuning and stacking for the housing price base models.
+
+Each base regressor is tuned in its own Optuna study. All five are then
+combined into one StackingRegressor with a Ridge metamodel.
+"""
+
 from __future__ import annotations
 
 import os
@@ -28,6 +34,21 @@ CV_FOLDS = 10
 
 @dataclass
 class ModelSpec:
+    """Everything needed to instantiate a base model.
+
+    Attributes
+    ----------
+    name : str
+        Name used for the Optuna study file, as well as the name
+        the model is registered under in StackingRegressor.
+    model_class : type
+        The regressor class to be tuned.
+    param_space : Callable[[optuna.trial.Trial], dict]
+        The hyperparameter dict to use in Optuna trials.
+    fixed_params : dict
+        Extra kwargs applied on every trial and the final fit.
+        These are not being tuned.
+    """
     name: str
     model_class: type
     param_space: Callable[[optuna.trial.Trial], dict]
@@ -101,6 +122,22 @@ BASE_MODEL_SPECS = [
 ]
 
 class SeparateModelOptimization:
+    """Tunes a set of base regressors with Optuna, then stacks them.
+
+    Attributes
+    ----------
+    X : pd.DataFrame
+        Training data.
+    y : pd.Series
+        Training target.
+    n_trials : int
+        Number of Optuna trials run per base model.
+        Note: 100 of these trials is extremely computationally expensive;
+        if you decide to run this program yourself, feel free to turn that
+        number down a bit.
+    model_specs : list[ModelSpec]
+        The list of base models defined earlier.
+    """
     def __init__(
             self,
             X: pd.DataFrame,
@@ -115,6 +152,7 @@ class SeparateModelOptimization:
         self.optimized_models: list[tuple[str, object]] = []
 
     def _optimize_model(self, spec: ModelSpec) -> None:
+        """Runs an Optuna study, and stores the best-fit model."""
         def objective(trial: optuna.trial.Trial) -> float:
             model = spec.model_class(
                 **spec.param_space(trial), **spec.fixed_params, random_state=RANDOM_STATE
@@ -123,8 +161,18 @@ class SeparateModelOptimization:
                 model, self.X, self.y, cv=CV_FOLDS, scoring="neg_mean_squared_error", n_jobs=-1
             ).mean()
 
+        # To remind myself of what these do in the future:
+        # Storage tracks experiment history in a database to prevent data loss
+        # and share trial data across optimization workers.
         storage = optuna.storages.RDBStorage(url="sqlite:///../optuna_database/ensemble_models_study.db")
+
+        # Auto sampler selects an appropriate sampler for the search space
+        # (a sampler executes a specific hyperparameter optimization algorithm).
         sampler_module = optunahub.load_module(package="samplers/auto_sampler")
+
+        # A study takes the objective you want to minimize or maximize
+        # (in this case, maximize our MSE since it's negative), and conducts many
+        # trials to find the best possible parameters.
         study = optuna.create_study(
             direction="maximize", storage=storage, sampler=sampler_module.AutoSampler(seed=RANDOM_STATE)
         )
@@ -138,10 +186,12 @@ class SeparateModelOptimization:
         self.optimized_models.append((spec.name, best_model))
 
     def optimize_all_base_models(self) -> None:
+        """Runs Optuna tuning for every model in self.model_specs."""
         for model_spec in self.model_specs:
             self._optimize_model(model_spec)
 
     def stacking_regressor_model(self) -> StackingRegressor:
+        """Tunes all base models, and stacks them with a Ridge metamodel."""
         self.optimize_all_base_models()
 
         stacking_regressor = StackingRegressor(
