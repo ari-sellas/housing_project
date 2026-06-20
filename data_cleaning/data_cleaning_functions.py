@@ -6,6 +6,13 @@ from sklearn.impute import KNNImputer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
 
+"""Cleaning and feature engineering for Kaggle's Ames housing data.
+
+Training and test data go through the same steps, more or less; training data
+is used to fit the imputers/encoder, and test data uses what was fit on
+training data to ensure consistency. 
+"""
+
 # These columns have too many missing values,
 # and aren't worth the trouble of including them.
 COLUMNS_TO_DROP = ["Alley", "MasVnrType", "PoolQC", "Fence", "MiscFeature"]
@@ -14,6 +21,26 @@ DEFAULT_KNN_NEIGHBORS = 5
 
 
 def clean_training_data(training_csv_file: str) -> tuple[pd.DataFrame, list, OneHotEncoder]:
+    """Cleans the training CSV and fits imputers and encoders.
+
+    Parameters
+    ----------
+    training_csv_file : str
+        Path to the training CSV.
+
+    Returns
+    -------
+    cleaned_df : pd.DataFrame
+        Cleaned and feature-engineered training data (now entirely numerical).
+        Includes a log-transformed SalePrice column to reduce the impact of outliers in the data.
+    imputers : list
+        [numeric_imputer, scaled_numeric_imputer, categorical_imputer]
+        This is used in clean_test_data so that the test data is handled in
+        the exact same way.
+    fitted_ohe : OneHotEncoder
+        Fitted on categorical data. Also passed into clean_test_data.
+    """
+
     uncleaned_df = pd.read_csv(training_csv_file)
     uncleaned_df = uncleaned_df.drop(columns=["Id", *COLUMNS_TO_DROP])
 
