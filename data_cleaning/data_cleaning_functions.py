@@ -98,13 +98,30 @@ def clean_testing_data(
 
     return cleaned_df, house_ids
 
+
 def _split_numerical_and_categorical(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Splits a dataframe into numeric and object-dtype columns.
+
+    Note: while the dtype for these columns is "object" and not "categorical,"
+    these columns will still be referred to as "categorical" since they contain
+    categorical variables.
+    """
+
     num_df = df.select_dtypes(include=NUMERIC_DTYPES)
     cat_df = df.select_dtypes(include="object")
     return num_df, cat_df
 
 
 def _fit_numerical_cleaners(num_df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
+    """Imputes, feature-engineers, and imputes again after scaling.
+
+    Note: to explain the process a little further, the first imputation is
+    there only to fill in gaps so that the feature-engineering function won't
+    run into a NaN value. The feature-engineered columns are then appended to
+    the original dataframe, and then the second scaled imputation is applied
+    to center the data and refill gaps.
+    """
+
     original_columns = num_df.columns
 
     numeric_imputer = _fit_knn_imputer(num_df)
@@ -127,6 +144,7 @@ def _use_numerical_cleaners(
         numeric_imputer: KNNImputer,
         scaled_numeric_imputer: Pipeline
 ) -> pd.DataFrame:
+    """Same steps as _fit_numerical_cleaners, just with established imputers."""
     original_columns = num_df.columns
 
     imputed_df = pd.DataFrame(numeric_imputer.transform(num_df), columns=original_columns)
@@ -145,12 +163,16 @@ def _use_numerical_cleaners(
 def _fit_categorical_cleaners(
         cat_df: pd.DataFrame
 ) -> tuple[pd.DataFrame, OneHotEncoder, KNNImputer]:
+    """One-hot encodes the categorical columns, and imputes any gaps."""
+
     ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False).set_output(
         transform="pandas"
     )
 
     encoded_df = ohe.fit_transform(cat_df)
 
+# Regular KNN imputation is used here instead of the scaled version,
+# as scaling the one-hot encoded values would mess with their binary nature.
     categorical_imputer = _fit_knn_imputer(encoded_df)
     cleaned_df = pd.DataFrame(
         categorical_imputer.transform(encoded_df), columns=encoded_df.columns
@@ -162,8 +184,10 @@ def _fit_categorical_cleaners(
 def _use_categorical_cleaners(
         cat_df: pd.DataFrame,
         fitted_ohe: OneHotEncoder,
-        categorical_imputer: Pipeline
+        categorical_imputer: KNNImputer
 ) -> pd.DataFrame:
+    """Same steps as _fit_categorical_cleaners, just with a fitted imputer and OHE."""
+
     encoded_df = fitted_ohe.transform(cat_df)
     cleaned_df = pd.DataFrame(
         categorical_imputer.transform(encoded_df), columns=encoded_df.columns
@@ -172,6 +196,12 @@ def _use_categorical_cleaners(
 
 
 def _numerical_feature_engineering(num_df: pd.DataFrame) -> pd.DataFrame:
+    """Adds numeric features not yet present in the CSV.
+
+    These were chosen because they seemed like they would affect the price
+    more than any one column on its own (e.g., the total property square footage
+    vs. just the basement square footage).
+    """
     num_df = num_df.copy()
     num_df["TotalLivingSF"] = num_df["TotalBsmtSF"] + num_df["GrLivArea"]
     num_df["TotalPropertySF"] = num_df["TotalLivingSF"] + num_df["GarageArea"]
@@ -185,10 +215,12 @@ def _numerical_feature_engineering(num_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _fit_knn_imputer(df: pd.DataFrame, n_neighbors:int = DEFAULT_KNN_NEIGHBORS) -> KNNImputer:
+    """Fits a KNN imputer with a fixed neighbor count."""
     return KNNImputer(n_neighbors=n_neighbors).fit(df)
 
 
 def _fit_scaled_knn_imputer(df: pd.DataFrame, n_neighbors:int = DEFAULT_KNN_NEIGHBORS) -> Pipeline:
+    """Same process as _fit_knn_imputer, but scales first."""
     pipeline = Pipeline([
         ("scaler", StandardScaler()),
         ("knn_imputer", _fit_knn_imputer(df, n_neighbors))
