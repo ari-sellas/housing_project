@@ -122,3 +122,17 @@ class SeparateModelOptimization:
             return cross_val_score(
                 model, self.X, self.y, cv=CV_FOLDS, scoring="neg_mean_squared_error", n_jobs=-1
             ).mean()
+
+        storage = optuna.storages.RDBStorage(url="sqlite:///../optuna_database/ensemble_models_study.db")
+        sampler_module = optunahub.load_module(package="samplers/auto_sampler")
+        study = optuna.create_study(
+            direction="maximize", storage=storage, sampler=sampler_module.AutoSampler(seed=RANDOM_STATE)
+        )
+        study.optimize(
+            objective, n_trials=self.n_trials, show_progress_bar=True, gc_after_trial=True, n_jobs=-1
+        )
+
+        best_model = spec.model_class(
+            **study.best_params, **spec.fixed_params, random_state=RANDOM_STATE
+        ).fit(self.X, self.y)
+        self.optimized_models.append((spec.name, best_model))
