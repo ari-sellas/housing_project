@@ -29,6 +29,14 @@ def _split_numerical_and_categorical(df: pd.DataFrame) -> tuple[pd.DataFrame, pd
     return num_df, cat_df
 
 
+def _fit_numeric_cleaners(num_df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
+    original_columns = num_df.columns
+
+    numeric_imputer = _fit_knn_imputer(num_df)
+    imputed_df = pd.DataFrame(numeric_knn_imputer.transform(num_df), columns=original_columns)
+
+    ...
+
 def _fit_knn_imputer(df: pd.DataFrame, n_neighbors:int = DEFAULT_KNN_NEIGHBORS) -> KNNImputer:
     return KNNImputer(n_neighbors=n_neighbors).fit(df)
 
