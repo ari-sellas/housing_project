@@ -1,3 +1,10 @@
+"""Cleaning and feature engineering for Kaggle's Ames housing data.
+
+Training and test data go through the same steps, more or less; training data
+is used to fit the imputers/encoder, and test data uses what was fit on
+training data to ensure consistency.
+"""
+
 from __future__ import annotations
 
 import pandas as pd
@@ -5,13 +12,6 @@ import numpy as np
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
-
-"""Cleaning and feature engineering for Kaggle's Ames housing data.
-
-Training and test data go through the same steps, more or less; training data
-is used to fit the imputers/encoder, and test data uses what was fit on
-training data to ensure consistency. 
-"""
 
 # These columns have too many missing values,
 # and aren't worth the trouble of including them.
@@ -171,8 +171,8 @@ def _fit_categorical_cleaners(
 
     encoded_df = ohe.fit_transform(cat_df)
 
-# Regular KNN imputation is used here instead of the scaled version,
-# as scaling the one-hot encoded values would mess with their binary nature.
+    # Regular KNN imputation is used here instead of the scaled version,
+    # as scaling the one-hot encoded values would mess with their binary nature.
     categorical_imputer = _fit_knn_imputer(encoded_df)
     cleaned_df = pd.DataFrame(
         categorical_imputer.transform(encoded_df), columns=encoded_df.columns
@@ -214,15 +214,15 @@ def _numerical_feature_engineering(num_df: pd.DataFrame) -> pd.DataFrame:
     return num_df
 
 
-def _fit_knn_imputer(df: pd.DataFrame, n_neighbors:int = DEFAULT_KNN_NEIGHBORS) -> KNNImputer:
+def _fit_knn_imputer(df: pd.DataFrame, n_neighbors: int = DEFAULT_KNN_NEIGHBORS) -> KNNImputer:
     """Fits a KNN imputer with a fixed neighbor count."""
     return KNNImputer(n_neighbors=n_neighbors).fit(df)
 
 
-def _fit_scaled_knn_imputer(df: pd.DataFrame, n_neighbors:int = DEFAULT_KNN_NEIGHBORS) -> Pipeline:
+def _fit_scaled_knn_imputer(df: pd.DataFrame, n_neighbors: int = DEFAULT_KNN_NEIGHBORS) -> Pipeline:
     """Same process as _fit_knn_imputer, but scales first."""
     pipeline = Pipeline([
         ("scaler", StandardScaler()),
-        ("knn_imputer", _fit_knn_imputer(df, n_neighbors))
+        ("knn_imputer", KNNImputer(n_neighbors=n_neighbors))
     ])
     return pipeline.fit(df)
