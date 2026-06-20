@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 
 # Note to self: also use this in future projects.
 # It allows you to type hint a parameter that must be a function.
-from typing import Callable
+from collections.abc import Callable
 
 import optuna
 import optunahub
@@ -23,6 +23,8 @@ from sklearn.linear_model import Ridge
 from sklearn.model_selection import cross_val_score
 from xgboost import XGBRegressor
 
+RANDOM_STATE = 42
+CV_FOLDS = 10
 
 @dataclass
 class ModelSpec:
@@ -102,12 +104,21 @@ class SeparateModelOptimization:
     def __init__(
             self,
             X: pd.DataFrame,
-            Y: pd.DataFrame,
+            y: pd.DataFrame,
             model_specs: list[ModelSpec],
             n_trials: int = 100
     ):
         self.X = X
-        self.Y = Y
+        self.y = y
         self.model_specs = BASE_MODEL_SPECS
         self.n_trials = n_trials
         self.optimized_models: list[tuple[str, object]] = []
+
+    def _optimize_model(self, spec: ModelSpec) -> None:
+        def objective(trial: optuna.trial.Trial) -> float:
+            model = spec.model_class(
+                **spec.param_space(trial), **spec.fixed_params, random_state=RANDOM_STATE
+            )
+            return cross_val_score(
+                model, self.X, self.y, cv=CV_FOLDS, scoring="neg_mean_squared_error", n_jobs=-1
+            ).mean()
