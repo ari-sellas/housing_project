@@ -46,6 +46,24 @@ def _fit_numerical_cleaners(num_df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
 
     return cleaned_df, [numeric_imputer, scaled_numeric_imputer]
 
+
+def _fit_categorical_cleaners(
+        cat_df: pd.DataFrame
+) -> tuple[pd.DataFrame, OneHotEncoder, KNNImputer]:
+    ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False).set_output(
+        transform="pandas"
+    )
+
+    encoded_df = ohe.fit_transform(cat_df)
+
+    categorical_imputer = _fit_knn_imputer(encoded_df)
+    cleaned_df = pd.DataFrame(
+        categorical_imputer.transform(encoded_df), columns=encoded_df.columns
+    )
+
+    return cleaned_df, ohe, categorical_imputer
+
+
 def _numerical_feature_engineering(num_df: pd.DataFrame) -> pd.DataFrame:
     num_df = num_df.copy()
     num_df["TotalLivingSF"] = num_df["TotalBsmtSF"] + num_df["GrLivArea"]
