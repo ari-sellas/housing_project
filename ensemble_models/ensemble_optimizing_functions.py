@@ -9,14 +9,14 @@ from __future__ import annotations
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 
-# Note to self: use these in future projects.
 # @dataclass removes the need for an __init__ method
 # since it will generate the constructor by default,
-# and field can prevent shared mutable bugs.
+# and field avoids shared mutable bugs.
 from dataclasses import dataclass, field
 
-# Note to self: also use this in future projects.
-# It allows you to type hint a parameter that must be a function.
+# Callable type-hints a parameter that must be a function.
+# In this case, it's used for the Optuna search spaces
+# (the hyperparameter ranges for each model).
 from collections.abc import Callable
 
 import optuna
@@ -166,7 +166,6 @@ class SeparateModelOptimization:
                 model, self.X, self.y, cv=CV_FOLDS, scoring="neg_mean_squared_error", n_jobs=-1
             ).mean()
 
-        # To remind myself of what these do in the future:
         # Storage tracks experiment history in a database to prevent data loss
         # and share trial data across optimization workers.
         storage = optuna.storages.RDBStorage(url="sqlite:///../optuna_database/ensemble_models_study.db")
