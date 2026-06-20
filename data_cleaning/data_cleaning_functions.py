@@ -29,16 +29,24 @@ def _split_numerical_and_categorical(df: pd.DataFrame) -> tuple[pd.DataFrame, pd
     return num_df, cat_df
 
 
-def _fit_numeric_cleaners(num_df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
+def _fit_numerical_cleaners(num_df: pd.DataFrame) -> tuple[pd.DataFrame, list]:
     original_columns = num_df.columns
 
     numeric_imputer = _fit_knn_imputer(num_df)
-    imputed_df = pd.DataFrame(numeric_imputer.transform(num_df), columns=original_columns)
+    knn_imputed_df = pd.DataFrame(numeric_imputer.transform(num_df), columns=original_columns)
 
-    ...
+    feature_engineered_df = _numerical_feature_engineering(knn_imputed_df)
+    new_columns_only = feature_engineered_df.drop(columns=original_columns)
+    combined_df = pd.concat([num_df[original_columns], new_columns_only], axis=1)
 
+    scaled_numeric_imputer = _fit_scaled_knn_imputer(combined_df)
+    cleaned_df = pd.DataFrame(
+        scaled_numeric_imputer.transform(combined_df), columns=combined_df.columns
+    )
 
-def _numeric_feature_engineering(num_df: pd.DataFrame) -> pd.DataFrame:
+    return cleaned_df, [numeric_imputer, scaled_numeric_imputer]
+
+def _numerical_feature_engineering(num_df: pd.DataFrame) -> pd.DataFrame:
     num_df = num_df.copy()
     num_df["TotalLivingSF"] = num_df["TotalBsmtSF"] + num_df["GrLivArea"]
     num_df["TotalPropertySF"] = num_df["TotalLivingSF"] + num_df["GarageArea"]
