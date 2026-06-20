@@ -136,3 +136,17 @@ class SeparateModelOptimization:
             **study.best_params, **spec.fixed_params, random_state=RANDOM_STATE
         ).fit(self.X, self.y)
         self.optimized_models.append((spec.name, best_model))
+
+    def optimize_all_base_models(self) -> None:
+        for model_spec in self.model_specs:
+            self._optimize_model(model_spec)
+
+    def stacking_regressor_model(self) -> StackingRegressor:
+        self.optimize_all_base_models()
+
+        stacking_regressor = StackingRegressor(
+            estimators=self.optimized_models,
+            final_estimator=Ridge(random_state=RANDOM_STATE),
+            cv=CV_FOLDS
+        )
+        return stacking_regressor.fit(self.X, self.y)
