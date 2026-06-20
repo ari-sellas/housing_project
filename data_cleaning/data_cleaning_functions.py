@@ -107,6 +107,18 @@ def _fit_categorical_cleaners(
     return cleaned_df, ohe, categorical_imputer
 
 
+def _use_categorical_cleaners(
+        cat_df: pd.DataFrame,
+        fitted_ohe: OneHotEncoder,
+        categorical_imputer: Pipeline
+) -> pd.DataFrame:
+    encoded_df = fitted_ohe.transform(cat_df)
+    cleaned_df = pd.DataFrame(
+        categorical_imputer.transform(encoded_df), columns=encoded_df.columns
+    )
+    return cleaned_df
+
+
 def _numerical_feature_engineering(num_df: pd.DataFrame) -> pd.DataFrame:
     num_df = num_df.copy()
     num_df["TotalLivingSF"] = num_df["TotalBsmtSF"] + num_df["GrLivArea"]
