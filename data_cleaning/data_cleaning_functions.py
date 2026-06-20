@@ -20,7 +20,15 @@ def clean_training_data(training_csv_file: str) -> tuple[pd.DataFrame, list, One
     log_transformed_sale_prices = np.log(uncleaned_df["SalePrice"])
     uncleaned_df = uncleaned_df.drop(columns="SalePrice")
 
-    ...
+    num_df, cat_df = _split_numerical_and_categorical(uncleaned_df)
+
+    num_df, numeric_imputers = _fit_numerical_cleaners(num_df)
+    cat_df, fitted_ohe, categorical_imputer = _fit_categorical_cleaners(cat_df)
+
+    cleaned_df = pd.concat([num_df, cat_df, log_transformed_sale_prices], axis=1)
+    imputers = [*numeric_imputers, categorical_imputer]
+
+    return cleaned_df, imputers, fitted_ohe
 
 
 def _split_numerical_and_categorical(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
