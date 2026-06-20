@@ -98,3 +98,16 @@ BASE_MODEL_SPECS = [
     ModelSpec("ridge", Ridge, _ridge_param_space, {})
 ]
 
+class SeparateModelOptimization:
+    def __init__(
+            self,
+            X: pd.DataFrame,
+            Y: pd.DataFrame,
+            model_specs: list[ModelSpec],
+            n_trials: int = 100
+    ):
+        self.X = X
+        self.Y = Y
+        self.model_specs = BASE_MODEL_SPECS
+        self.n_trials = n_trials
+        self.optimized_models: list[tuple[str, object]] = []
