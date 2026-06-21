@@ -6,6 +6,9 @@ combined into one StackingRegressor with a Ridge metamodel.
 
 from __future__ import annotations
 
+# Mitigates thread oversubscription caused by competition over CPU cores
+# MUST stay above XGBoost / CatBoost / LightGBM imports, as each
+# library reads this once, but only at import time.
 import os
 os.environ["OMP_NUM_THREADS"] = "1"
 
